@@ -1,17 +1,12 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { Search, TrendingUp, Shield, Zap, Target, BarChart3, PieChart, Activity } from 'lucide-react'
-import axios from 'axios'
+import { FinancialData } from './types/financial'
+import { financialApi } from './services/api'
 import FinancialDashboard from './components/FinancialDashboard'
 import CompanySearch from './components/CompanySearch'
 import LoadingSpinner from './components/LoadingSpinner'
-
-interface FinancialData {
-  idx_cl_nm: string
-  idx_nm: string
-  idx_val: number
-}
 
 export default function Home() {
   const [companyName, setCompanyName] = useState('')
@@ -19,20 +14,32 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const handleSearch = async (searchCompanyName: string) => {
+  const handleSearch = useCallback(async (searchCompanyName: string) => {
+    if (!searchCompanyName.trim()) {
+      setError('기업명을 입력해주세요.')
+      return
+    }
+
     setLoading(true)
     setError('')
     setCompanyName(searchCompanyName)
 
     try {
-      const response = await axios.get(`/api/financial-data?company=${encodeURIComponent(searchCompanyName)}`)
-      setFinancialData(response.data)
+      const data = await financialApi.getFinancialData(searchCompanyName)
+      setFinancialData(data)
     } catch (err: any) {
-      setError(err.response?.data?.message || '데이터를 불러오는 중 오류가 발생했습니다.')
+      setError(err.message || '데이터를 불러오는 중 오류가 발생했습니다.')
+      setFinancialData([])
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  const handleClearData = useCallback(() => {
+    setCompanyName('')
+    setFinancialData([])
+    setError('')
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -62,7 +69,15 @@ export default function Home() {
         
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-8">
-            <p className="text-red-400">{error}</p>
+            <div className="flex items-center justify-between">
+              <p className="text-red-400">{error}</p>
+              <button
+                onClick={handleClearData}
+                className="text-red-400 hover:text-red-300 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         )}
 
@@ -117,11 +132,13 @@ export default function Home() {
   )
 }
 
-function FeatureCard({ icon, title, description }: {
+interface FeatureCardProps {
   icon: React.ReactNode
   title: string
   description: string
-}) {
+}
+
+function FeatureCard({ icon, title, description }: FeatureCardProps) {
   return (
     <div className="glass rounded-xl p-6 hover:scale-105 transition-transform duration-300">
       <div className="text-blue-400 mb-4">{icon}</div>

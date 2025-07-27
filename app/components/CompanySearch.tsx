@@ -1,50 +1,152 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Search, Building2 } from 'lucide-react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
+import { Search, X } from 'lucide-react'
+import { CompanyInfo } from '../types/financial'
+import { financialApi } from '../services/api'
 
 interface CompanySearchProps {
   onSearch: (companyName: string) => void
 }
 
 export default function CompanySearch({ onSearch }: CompanySearchProps) {
-  const [searchTerm, setSearchTerm] = useState('')
+  const [query, setQuery] = useState('')
+  const [suggestions, setSuggestions] = useState<CompanyInfo[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (searchTerm.trim()) {
-      onSearch(searchTerm.trim())
+  // 외부 클릭 감지
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // 검색 제안 가져오기
+  const fetchSuggestions = useCallback(async (searchQuery: string) => {
+    if (!searchQuery.trim() || searchQuery.length < 2) {
+      setSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+
+    setLoading(true)
+    try {
+      const companies = await financialApi.searchCompanies(searchQuery)
+      setSuggestions(companies.slice(0, 10)) // 최대 10개만 표시
+      setShowSuggestions(companies.length > 0)
+    } catch (error) {
+      console.error('Failed to fetch suggestions:', error)
+      setSuggestions([])
+      setShowSuggestions(false)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  // 디바운스된 검색
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchSuggestions(query)
+    }, 300)
+
+    return () => clearTimeout(timeoutId)
+  }, [query, fetchSuggestions])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setQuery(value)
+    if (!value.trim()) {
+      setSuggestions([])
+      setShowSuggestions(false)
     }
   }
 
+  const handleSuggestionClick = (company: CompanyInfo) => {
+    setQuery(company.corp_name)
+    setShowSuggestions(false)
+    onSearch(company.corp_name)
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (query.trim()) {
+      onSearch(query.trim())
+      setShowSuggestions(false)
+    }
+  }
+
+  const handleClear = () => {
+    setQuery('')
+    setSuggestions([])
+    setShowSuggestions(false)
+  }
+
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="relative w-full max-w-2xl mx-auto" ref={searchRef}>
       <form onSubmit={handleSubmit} className="relative">
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <Building2 className="h-5 w-5 text-gray-400" />
-          </div>
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="기업명을 입력하세요 (예: 삼성전자, SK하이닉스, 현대자동차)"
-            className="w-full pl-12 pr-4 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+            value={query}
+            onChange={handleInputChange}
+            placeholder="기업명을 입력하세요 (예: 삼성전자, 현대자동차)"
+            className="w-full pl-12 pr-12 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
           />
-          <button
-            type="submit"
-            className="absolute inset-y-0 right-0 pr-4 flex items-center"
-          >
-            <Search className="h-5 w-5 text-gray-400 hover:text-white transition-colors duration-200" />
-          </button>
+          {query && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
+        
+        <button
+          type="submit"
+          className="mt-4 w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+        >
+          재무지표 분석하기
+        </button>
       </form>
-      
-      <div className="mt-4 text-center">
-        <p className="text-sm text-gray-400">
-          💡 팁: 정확한 기업명을 입력하면 더 정확한 결과를 얻을 수 있습니다
-        </p>
-      </div>
+
+      {/* 검색 제안 */}
+      {showSuggestions && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden z-50">
+          {loading ? (
+            <div className="p-4 text-center text-gray-400">
+              검색 중...
+            </div>
+          ) : suggestions.length > 0 ? (
+            <ul className="max-h-60 overflow-y-auto">
+              {suggestions.map((company, index) => (
+                <li key={index}>
+                  <button
+                    type="button"
+                    onClick={() => handleSuggestionClick(company)}
+                    className="w-full text-left px-4 py-3 hover:bg-white/10 transition-colors text-white border-b border-white/10 last:border-b-0"
+                  >
+                    {company.corp_name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="p-4 text-center text-gray-400">
+              검색 결과가 없습니다.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 } 
