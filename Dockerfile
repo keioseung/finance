@@ -25,12 +25,12 @@ COPY --from=frontend-builder /app/public ./public
 COPY --from=frontend-builder /app/package*.json ./
 COPY --from=frontend-builder /app/next.config.js ./
 
-# Copy backend
-COPY backend/ ./backend/
-COPY requirements.txt ./
+# Copy backend files
+COPY backend/main.py ./backend/
+COPY backend/requirements.txt ./backend/
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r backend/requirements.txt
 
 # Install frontend dependencies for production
 RUN npm ci --only=production --no-audit --no-fund
