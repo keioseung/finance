@@ -46,10 +46,11 @@ export const financialApi = {
 
   async searchCompanies(query: string): Promise<CompanyInfo[]> {
     try {
-      const response = await apiClient.get<CompanyInfo[]>('/companies/search', {
+      const response = await apiClient.get<{companies: string[]}>('/companies/search', {
         params: { query }
       })
-      return response.data
+      // 백엔드 응답 형식에 맞게 변환
+      return response.data.companies.map(company => ({ name: company }))
     } catch (error) {
       console.error('Failed to search companies:', error)
       throw error
