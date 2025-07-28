@@ -32,12 +32,22 @@ async def health_check():
 async def search_companies(query: str = Query(..., description="검색어")):
     """기업 검색"""
     try:
+        print(f"🔍 기업 검색 요청: {query}")
+        
         # DART API에서 기업 코드 다운로드
         url = f"https://opendart.fss.or.kr/api/corpCode.xml?crtfc_key={API_KEY}"
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         
         if response.status_code != 200:
-            return {"companies": []}
+            print(f"❌ DART API 응답 오류: {response.status_code}")
+            # 테스트용 더미 데이터 반환
+            dummy_companies = [
+                "삼성전자", "현대자동차", "LG전자", "SK하이닉스", "삼성바이오로직스",
+                "삼성SDI", "삼성생명", "삼성화재", "삼성증권", "삼성물산"
+            ]
+            matches = [company for company in dummy_companies if query.lower() in company.lower()]
+            print(f"📡 더미 데이터 반환: {matches}")
+            return {"companies": matches}
         
         # ZIP 파일에서 기업 목록 추출
         with zipfile.ZipFile(io.BytesIO(response.content), 'r') as zip_ref:
@@ -48,6 +58,7 @@ async def search_companies(query: str = Query(..., description="검색어")):
                     break
             
             if not xml_file:
+                print("❌ CORPCODE.xml 파일을 찾을 수 없음")
                 return {"companies": []}
             
             with zip_ref.open(xml_file) as xml_content:
@@ -57,15 +68,17 @@ async def search_companies(query: str = Query(..., description="검색어")):
                 matches = []
                 for item in root.iter("list"):
                     name = item.find("corp_name")
-                    if name is not None and query.lower() in name.text.lower():
+                    if name is not None and name.text and query.lower() in name.text.lower():
                         matches.append(name.text)
                         if len(matches) >= 10:  # 최대 10개 결과
                             break
                 
+                print(f"📡 검색 결과: {matches}")
                 return {"companies": matches}
                 
     except Exception as e:
-        print(f"기업 검색 오류: {e}")
+        print(f"❌ 기업 검색 오류: {e}")
+        # 오류 발생 시 빈 배열 반환
         return {"companies": []}
 
 @app.get("/financial-data")

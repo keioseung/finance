@@ -50,11 +50,25 @@ export default function CompanySearch({ onSearch }: CompanySearchProps) {
       console.log('📡 Processed companies array:', companiesArray)
       console.log('📡 Array length:', companiesArray.length)
       
-      const slicedCompanies = companiesArray.slice(0, 10) // 최대 10개만 표시
+      // 추가 안전성 검사
+      if (!companiesArray || companiesArray.length === 0) {
+        console.log('📡 No companies found, setting empty array')
+        setSuggestions([])
+        setShowSuggestions(false)
+        return
+      }
+      
+      // 각 항목이 올바른 형식인지 확인
+      const validCompanies = companiesArray.filter(company => 
+        company && typeof company === 'object' && 'corp_name' in company
+      )
+      console.log('📡 Valid companies:', validCompanies)
+      
+      const slicedCompanies = validCompanies.slice(0, 10) // 최대 10개만 표시
       console.log('📡 Sliced companies:', slicedCompanies)
       
       setSuggestions(slicedCompanies)
-      setShowSuggestions(companiesArray.length > 0)
+      setShowSuggestions(validCompanies.length > 0)
       console.log('✅ Suggestions set successfully')
     } catch (error) {
       console.error('❌ Failed to fetch suggestions:', error)
@@ -141,19 +155,27 @@ export default function CompanySearch({ onSearch }: CompanySearchProps) {
             <div className="p-4 text-center text-gray-400">
               검색 중...
             </div>
-          ) : suggestions.length > 0 ? (
+          ) : Array.isArray(suggestions) && suggestions.length > 0 ? (
             <ul className="max-h-60 overflow-y-auto">
-              {suggestions.map((company, index) => (
-                <li key={index}>
-                  <button
-                    type="button"
-                    onClick={() => handleSuggestionClick(company)}
-                    className="w-full text-left px-4 py-3 hover:bg-white/10 transition-colors text-white border-b border-white/10 last:border-b-0"
-                  >
-                    {company.corp_name}
-                  </button>
-                </li>
-              ))}
+              {suggestions.map((company, index) => {
+                // 각 company가 올바른 형식인지 확인
+                if (!company || typeof company !== 'object' || !('corp_name' in company)) {
+                  console.warn('⚠️ Invalid company object:', company)
+                  return null
+                }
+                
+                return (
+                  <li key={index}>
+                    <button
+                      type="button"
+                      onClick={() => handleSuggestionClick(company)}
+                      className="w-full text-left px-4 py-3 hover:bg-white/10 transition-colors text-white border-b border-white/10 last:border-b-0"
+                    >
+                      {company.corp_name}
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
           ) : (
             <div className="p-4 text-center text-gray-400">
