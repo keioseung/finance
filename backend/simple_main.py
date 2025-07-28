@@ -2,9 +2,6 @@ from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import requests
-import xml.etree.ElementTree as ET
-import zipfile
-import io
 import time
 
 app = FastAPI(title="Finance Backend API", version="1.0.0")
@@ -18,16 +15,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# DART API 키
-DART_API_KEY = os.getenv("DART_API_KEY", "e7153f9582f89deb2169769816dcc61c826bd5cf")
+# API 키들
+ALPHA_VANTAGE_API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY", "XF29EJJK21TVCUDF")
+FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY", "d23bhh9r01qgiro2upigd23bhh9r01qgiro2upj0")
 
 @app.get("/")
 async def root():
     return {
-        "message": "Finance Backend API (DART)", 
+        "message": "Finance Backend API (Alpha Vantage + Finnhub)", 
         "status": "running",
         "version": "1.0.0",
-        "dart_api_key": DART_API_KEY[:10] + "..." if DART_API_KEY else "Not set"
+        "alpha_vantage_key": ALPHA_VANTAGE_API_KEY[:10] + "..." if ALPHA_VANTAGE_API_KEY else "Not set",
+        "finnhub_key": FINNHUB_API_KEY[:10] + "..." if FINNHUB_API_KEY else "Not set"
     }
 
 @app.get("/health")
@@ -59,54 +58,39 @@ def get_dummy_companies(query: str):
 
 @app.get("/companies/search")
 async def search_companies(query: str = Query(..., description="검색어")):
-    """기업 검색 - DART API 사용 (실패 시 더미 데이터)"""
+    """기업 검색 - Alpha Vantage API 사용"""
     try:
         print(f"🔍 기업 검색 요청: {query}")
-        
-        # DART API에서 기업 코드 다운로드
-        url = f"https://opendart.fss.or.kr/api/corpCode.xml?crtfc_key={DART_API_KEY}"
-        response = requests.get(url, timeout=15)
-        
+        url = f"https://www.alphavantage.co/query"
+        params = {
+            "function": "SYMBOL_SEARCH",
+            "keywords": query,
+            "apikey": ALPHA_VANTAGE_API_KEY
+        }
+        response = requests.get(url, params=params, timeout=15)
+        print(f"📡 Alpha Vantage API 응답 상태: {response.status_code}")
+
         if response.status_code != 200:
-            print(f"❌ DART API 응답 오류: {response.status_code}")
+            print(f"❌ Alpha Vantage API 응답 오류: {response.status_code}")
             matches = get_dummy_companies(query)
             print(f"📡 더미 데이터 반환: {matches}")
             return {"companies": matches}
-        
-        # ZIP 파일에서 기업 목록 추출
-        try:
-            with zipfile.ZipFile(io.BytesIO(response.content), 'r') as zip_ref:
-                xml_file = None
-                for file_info in zip_ref.filelist:
-                    if file_info.filename.endswith('CORPCODE.xml'):
-                        xml_file = file_info.filename
-                        break
-                
-                if not xml_file:
-                    print("❌ CORPCODE.xml 파일을 찾을 수 없음")
-                    matches = get_dummy_companies(query)
-                    return {"companies": matches}
-                
-                with zip_ref.open(xml_file) as xml_content:
-                    tree = ET.parse(xml_content)
-                    root = tree.getroot()
-                    
-                    matches = []
-                    for item in root.iter("list"):
-                        name = item.find("corp_name")
-                        if name is not None and name.text and query.lower() in name.text.lower():
-                            matches.append(name.text)
-                            if len(matches) >= 10:  # 최대 10개 결과
-                                break
-                    
-                    print(f"📡 검색 결과: {matches}")
-                    return {"companies": matches}
-                    
-        except Exception as zip_error:
-            print(f"❌ ZIP 파일 처리 오류: {zip_error}")
-            matches = get_dummy_companies(query)
-            return {"companies": matches}
-                
+
+        data = response.json()
+        print(f"📡 Alpha Vantage API 응답: {data}")
+
+        companies = []
+        if "bestMatches" in data:
+            for match in data["bestMatches"]:
+                if "2. name" in match:
+                    companies.append(match["2. name"])
+
+        if not companies:
+            companies = get_dummy_companies(query)
+
+        print(f"📡 검색 결과: {companies}")
+        return {"companies": companies[:10]}
+
     except Exception as e:
         print(f"❌ 기업 검색 오류: {e}")
         matches = get_dummy_companies(query)
@@ -167,21 +151,47 @@ def get_dummy_financial_data():
 
 @app.get("/financial-data")
 async def get_financial_data(company: str = Query(..., description="기업명"), year: str = Query("2023", description="연도")):
-    """재무지표 데이터 조회 - DART API 사용 (실패 시 더미 데이터)"""
+    """재무지표 데이터 조회 - Alpha Vantage API 사용"""
     try:
         print(f"📊 재무 데이터 요청: company={company}, year={year}")
-        
-        # DART API 호출 시도
-        try:
-            # 간단한 테스트를 위해 더미 데이터 반환
-            # 실제 DART API 호출은 복잡하므로 일단 더미 데이터로 시작
-            print("🔄 DART API 호출 대신 더미 데이터 반환")
+        url = f"https://www.alphavantage.co/query"
+        params = {
+            "function": "OVERVIEW",
+            "symbol": company,
+            "apikey": ALPHA_VANTAGE_API_KEY
+        }
+        response = requests.get(url, params=params, timeout=15)
+        print(f"📡 Alpha Vantage API 응답 상태: {response.status_code}")
+
+        if response.status_code != 200:
+            print(f"❌ Alpha Vantage API 응답 오류: {response.status_code}")
             return get_dummy_financial_data()
-            
-        except Exception as dart_error:
-            print(f"❌ DART API 오류: {dart_error}")
-            return get_dummy_financial_data()
-        
+
+        data = response.json()
+        print(f"📡 Alpha Vantage API 응답: {data}")
+
+        financial_data = []
+        if "ReturnOnEquityTTM" in data and data["ReturnOnEquityTTM"] != "None":
+            financial_data.append({"category": "수익성", "indicator": "ROE", "idx_val": float(data["ReturnOnEquityTTM"]), "unit": "%"})
+        if "ReturnOnAssetsTTM" in data and data["ReturnOnAssetsTTM"] != "None":
+            financial_data.append({"category": "수익성", "indicator": "ROA", "idx_val": float(data["ReturnOnAssetsTTM"]), "unit": "%"})
+        if "DebtToEquityRatio" in data and data["DebtToEquityRatio"] != "None":
+            financial_data.append({"category": "안정성", "indicator": "부채비율", "idx_val": float(data["DebtToEquityRatio"]), "unit": "%"})
+        if "RevenueGrowth" in data and data["RevenueGrowth"] != "None":
+            financial_data.append({"category": "성장성", "indicator": "매출성장률", "idx_val": float(data["RevenueGrowth"]), "unit": "%"})
+        if "AssetTurnover" in data and data["AssetTurnover"] != "None":
+            financial_data.append({"category": "활동성", "indicator": "총자산회전율", "idx_val": float(data["AssetTurnover"]), "unit": "회"})
+
+        if len(financial_data) < 4:
+            dummy_data = get_dummy_financial_data()
+            existing_categories = {item["category"] for item in financial_data}
+            for item in dummy_data:
+                if item["category"] not in existing_categories:
+                    financial_data.append(item)
+
+        print(f"📊 반환할 데이터: {financial_data}")
+        return financial_data
+
     except Exception as e:
         print(f"❌ 재무 데이터 조회 오류: {e}")
         return get_dummy_financial_data()
@@ -191,5 +201,6 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     host = os.getenv("HOST", "0.0.0.0")
     print(f"🚀 Starting backend on {host}:{port}")
-    print(f"🔑 DART API Key: {DART_API_KEY[:10]}..." if DART_API_KEY else "Not set")
+    print(f"🔑 Alpha Vantage API Key: {ALPHA_VANTAGE_API_KEY[:10]}..." if ALPHA_VANTAGE_API_KEY else "Not set")
+    print(f"🔑 Finnhub API Key: {FINNHUB_API_KEY[:10]}..." if FINNHUB_API_KEY else "Not set")
     uvicorn.run(app, host=host, port=port) 

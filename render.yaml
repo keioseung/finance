@@ -5,8 +5,10 @@ services:
     plan: free
     buildCommand: pip install fastapi uvicorn requests
     startCommand: python backend/simple_main.py
-    envVars:
-      - key: PORT
-        value: 10000
-      - key: DART_API_KEY
-        sync: false 
+               envVars:
+             - key: PORT
+               value: 10000
+             - key: ALPHA_VANTAGE_API_KEY
+               sync: false
+             - key: FINNHUB_API_KEY
+               sync: false 
