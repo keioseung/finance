@@ -39,8 +39,10 @@ export default function CompanySearch({ onSearch }: CompanySearchProps) {
     setLoading(true)
     try {
       const companies = await financialApi.searchCompanies(searchQuery)
-      setSuggestions(companies.slice(0, 10)) // 최대 10개만 표시
-      setShowSuggestions(companies.length > 0)
+      // companies가 배열인지 확인하고 안전하게 처리
+      const companiesArray = Array.isArray(companies) ? companies : []
+      setSuggestions(companiesArray.slice(0, 10)) // 최대 10개만 표시
+      setShowSuggestions(companiesArray.length > 0)
     } catch (error) {
       console.error('Failed to fetch suggestions:', error)
       setSuggestions([])

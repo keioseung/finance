@@ -22,7 +22,9 @@ export default function FinancialMetrics({ data }: FinancialMetricsProps) {
 
   const getTopMetrics = (category: string, count: number = 3) => {
     const categoryData = getCategoryData(category)
-    return categoryData
+    // categoryData가 배열인지 확인하고 안전하게 처리
+    const dataArray = Array.isArray(categoryData) ? categoryData : []
+    return dataArray
       .sort((a, b) => b.idx_val - a.idx_val)
       .slice(0, count)
   }
