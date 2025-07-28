@@ -11,7 +11,7 @@ app = FastAPI()
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://finance-jaxj.vercel.app"],
+    allow_origins=["*"],  # 개발 중에는 모든 도메인 허용
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
