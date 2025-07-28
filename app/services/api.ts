@@ -50,7 +50,10 @@ export const financialApi = {
         params: { query }
       })
       // 백엔드 응답 형식에 맞게 변환
-      return response.data.companies.map(company => ({ name: company }))
+      return response.data.companies.map(company => ({ 
+        corp_code: '', // DART API에서 corp_code를 제공하지 않으므로 빈 문자열
+        corp_name: company 
+      }))
     } catch (error) {
       console.error('Failed to search companies:', error)
       throw error
