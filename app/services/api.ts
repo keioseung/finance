@@ -1,7 +1,10 @@
 import axios, { AxiosResponse } from 'axios'
 import { FinancialData, CompanyInfo, ApiResponse } from '../types/financial'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://finance-backend-kqrt.onrender.com'
+
+console.log('🌐 API_BASE_URL:', API_BASE_URL)
+console.log('🌐 NEXT_PUBLIC_BACKEND_URL:', process.env.NEXT_PUBLIC_BACKEND_URL)
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

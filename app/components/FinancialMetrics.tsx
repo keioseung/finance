@@ -4,8 +4,8 @@ import React from 'react'
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
 interface FinancialData {
-  idx_cl_nm: string
-  idx_nm: string
+  category: string
+  indicator: string
   idx_val: number
 }
 
@@ -17,7 +17,7 @@ export default function FinancialMetrics({ data }: FinancialMetricsProps) {
   const categories = ['수익성', '안정성', '성장성', '활동성']
   
   const getCategoryData = (category: string) => {
-    return data.filter(item => item.idx_cl_nm === category)
+    return data.filter(item => item.category === category)
   }
 
   const getTopMetrics = (category: string, count: number = 3) => {
@@ -122,7 +122,7 @@ export default function FinancialMetrics({ data }: FinancialMetricsProps) {
                     <div key={index} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
                       <div className="flex-1">
                         <div className="text-sm font-medium text-white mb-1">
-                          {metric.idx_nm}
+                          {metric.indicator}
                         </div>
                         <div className="text-xs text-gray-400">
                           {interpretation.label}

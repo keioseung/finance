@@ -1,6 +1,6 @@
 export interface FinancialData {
-  idx_cl_nm: string
-  idx_nm: string
+  category: string
+  indicator: string
   idx_val: number
   unit?: string
 }

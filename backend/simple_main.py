@@ -72,27 +72,63 @@ async def search_companies(query: str = Query(..., description="검색어")):
 async def get_financial_data(company: str = Query(..., description="기업명"), year: str = Query("2023", description="연도")):
     """재무지표 데이터 조회"""
     try:
-        # 임시 데이터 반환 (실제 API 구현 전)
-        return [
-            {
-                "category": "재무상태표",
-                "indicator": "자산총계",
-                "value": 1000000,
-                "unit": "백만원"
-            },
-            {
-                "category": "재무상태표", 
-                "indicator": "부채총계",
-                "value": 500000,
-                "unit": "백만원"
-            },
+        print(f"📊 재무 데이터 요청: company={company}, year={year}")
+        
+        # 프론트엔드가 기대하는 형식으로 데이터 반환
+        financial_data = [
             {
                 "category": "수익성",
                 "indicator": "ROE",
-                "value": 15.5,
+                "idx_val": 15.5,
                 "unit": "%"
+            },
+            {
+                "category": "수익성",
+                "indicator": "ROA",
+                "idx_val": 8.2,
+                "unit": "%"
+            },
+            {
+                "category": "안정성",
+                "indicator": "부채비율",
+                "idx_val": 45.3,
+                "unit": "%"
+            },
+            {
+                "category": "안정성",
+                "indicator": "유동비율",
+                "idx_val": 180.5,
+                "unit": "%"
+            },
+            {
+                "category": "성장성",
+                "indicator": "매출성장률",
+                "idx_val": 12.3,
+                "unit": "%"
+            },
+            {
+                "category": "성장성",
+                "indicator": "영업이익성장률",
+                "idx_val": 18.2,
+                "unit": "%"
+            },
+            {
+                "category": "활동성",
+                "indicator": "총자산회전율",
+                "idx_val": 2.1,
+                "unit": "회"
+            },
+            {
+                "category": "활동성",
+                "indicator": "재고자산회전율",
+                "idx_val": 4.5,
+                "unit": "회"
             }
         ]
+        
+        print(f"📊 반환할 데이터: {financial_data}")
+        return financial_data
+        
     except Exception as e:
         print(f"재무 데이터 조회 오류: {e}")
         return []
