@@ -3,12 +3,8 @@ services:
     name: finance-backend
     env: python
     plan: free
-    buildCommand: pip install -r backend/requirements.txt
-    startCommand: python backend/main.py
+    buildCommand: pip install fastapi uvicorn requests
+    startCommand: python backend/simple_main.py
     envVars:
       - key: PORT
-        value: 10000
-      - key: ALPHA_VANTAGE_API_KEY
-        sync: false
-      - key: FINNHUB_API_KEY
-        sync: false 
+        value: 10000 
