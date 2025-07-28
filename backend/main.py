@@ -20,9 +20,10 @@ app = FastAPI(
 )
 
 # CORS 설정
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "https://finance-jaxj.vercel.app").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 프로덕션에서는 특정 도메인으로 제한
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
