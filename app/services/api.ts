@@ -1,7 +1,7 @@
 import axios, { AxiosResponse } from 'axios'
 import { FinancialData, CompanyInfo, ApiResponse } from '../types/financial'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
