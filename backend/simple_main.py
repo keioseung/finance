@@ -61,6 +61,15 @@ async def search_companies(query: str = Query(..., description="검색어")):
     """기업 검색 - Alpha Vantage API 사용"""
     try:
         print(f"🔍 기업 검색 요청: {query}")
+        
+        # 일단 더미 데이터로 안정성 확보
+        print("🔄 Alpha Vantage API 호출 대신 더미 데이터 반환 (안정성)")
+        matches = get_dummy_companies(query)
+        print(f"📡 더미 데이터 반환: {matches}")
+        return {"companies": matches}
+        
+        # 아래는 나중에 활성화할 Alpha Vantage API 코드
+        """
         url = f"https://www.alphavantage.co/query"
         params = {
             "function": "SYMBOL_SEARCH",
@@ -90,6 +99,7 @@ async def search_companies(query: str = Query(..., description="검색어")):
 
         print(f"📡 검색 결과: {companies}")
         return {"companies": companies[:10]}
+        """
 
     except Exception as e:
         print(f"❌ 기업 검색 오류: {e}")
@@ -154,6 +164,13 @@ async def get_financial_data(company: str = Query(..., description="기업명"),
     """재무지표 데이터 조회 - Alpha Vantage API 사용"""
     try:
         print(f"📊 재무 데이터 요청: company={company}, year={year}")
+        
+        # 일단 더미 데이터로 안정성 확보
+        print("🔄 Alpha Vantage API 호출 대신 더미 데이터 반환 (안정성)")
+        return get_dummy_financial_data()
+        
+        # 아래는 나중에 활성화할 Alpha Vantage API 코드
+        """
         url = f"https://www.alphavantage.co/query"
         params = {
             "function": "OVERVIEW",
@@ -191,6 +208,7 @@ async def get_financial_data(company: str = Query(..., description="기업명"),
 
         print(f"📊 반환할 데이터: {financial_data}")
         return financial_data
+        """
 
     except Exception as e:
         print(f"❌ 재무 데이터 조회 오류: {e}")

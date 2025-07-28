@@ -53,35 +53,59 @@ export const financialApi = {
     try {
       console.log('🔍 Searching companies with query:', query)
       
-      const response = await apiClient.get<{companies: string[]}>('/companies/search', {
+      const response = await apiClient.get('/companies/search', {
         params: { query }
       })
       
       console.log('📡 Raw API response:', response)
       console.log('📡 Response data:', response.data)
       console.log('📡 Response data type:', typeof response.data)
-      console.log('📡 Companies array:', response.data.companies)
-      console.log('📡 Companies array type:', typeof response.data.companies)
-      console.log('📡 Is companies array?', Array.isArray(response.data.companies))
       
-      // 백엔드 응답 형식에 맞게 변환
-      const companies = response.data.companies || []
-      console.log('📡 Processed companies:', companies)
+      // 응답 데이터를 안전하게 처리
+      let companies: string[] = []
       
-      const result = companies.map((company: string) => ({ 
-        corp_code: '', // DART API에서 corp_code를 제공하지 않으므로 빈 문자열
-        corp_name: company 
-      }))
+      if (response.data && typeof response.data === 'object') {
+        if (Array.isArray(response.data.companies)) {
+          companies = response.data.companies
+        } else if (Array.isArray(response.data)) {
+          companies = response.data
+        } else if (typeof response.data === 'string') {
+          // 문자열로 온 경우 (예상치 못한 응답)
+          companies = [response.data]
+        }
+      }
+      
+      console.log('📡 Processed companies array:', companies)
+      console.log('📡 Companies array type:', typeof companies)
+      console.log('📡 Is companies array?', Array.isArray(companies))
+      
+      // 안전한 변환
+      const result: CompanyInfo[] = []
+      if (Array.isArray(companies)) {
+        for (const company of companies) {
+          if (typeof company === 'string' && company.trim()) {
+            result.push({
+              corp_code: '',
+              corp_name: company.trim()
+            })
+          }
+        }
+      }
       
       console.log('📡 Final result:', result)
       console.log('📡 Result type:', typeof result)
       console.log('📡 Is result array?', Array.isArray(result))
       
+      // 결과가 비어있으면 더미 데이터 사용
+      if (result.length === 0) {
+        console.log('📡 No valid companies found, using dummy data')
+        return getDummyCompanies(query)
+      }
+      
       return result
     } catch (error) {
       console.error('❌ Failed to search companies:', error)
       console.log('🔄 Using dummy companies due to API error')
-      // API 실패 시 더미 데이터 반환
       return getDummyCompanies(query)
     }
   },

@@ -45,8 +45,20 @@ export default function CompanySearch({ onSearch }: CompanySearchProps) {
       console.log('📡 Companies type:', typeof companies)
       console.log('📡 Is companies array?', Array.isArray(companies))
       
-      // companies가 배열인지 확인하고 안전하게 처리
-      const companiesArray = Array.isArray(companies) ? companies : []
+      // 완전히 안전한 배열 처리
+      let companiesArray: CompanyInfo[] = []
+      
+      if (Array.isArray(companies)) {
+        companiesArray = companies
+      } else if (companies && typeof companies === 'object') {
+        // 객체인 경우 배열로 변환 시도
+        if (Array.isArray(companies.companies)) {
+          companiesArray = companies.companies
+        } else if (Array.isArray(companies.data)) {
+          companiesArray = companies.data
+        }
+      }
+      
       console.log('📡 Processed companies array:', companiesArray)
       console.log('📡 Array length:', companiesArray.length)
       
@@ -58,13 +70,32 @@ export default function CompanySearch({ onSearch }: CompanySearchProps) {
         return
       }
       
-      // 각 항목이 올바른 형식인지 확인
-      const validCompanies = companiesArray.filter(company => 
-        company && typeof company === 'object' && 'corp_name' in company
-      )
+      // 각 항목이 올바른 형식인지 확인하고 안전하게 변환
+      const validCompanies: CompanyInfo[] = []
+      for (const company of companiesArray) {
+        if (company && typeof company === 'object') {
+          if ('corp_name' in company && typeof company.corp_name === 'string') {
+            validCompanies.push({
+              corp_code: company.corp_code || '',
+              corp_name: company.corp_name
+            })
+          } else if (typeof company === 'string') {
+            // 문자열인 경우 직접 변환
+            validCompanies.push({
+              corp_code: '',
+              corp_name: company
+            })
+          }
+        }
+      }
+      
       console.log('📡 Valid companies:', validCompanies)
       
-      const slicedCompanies = validCompanies.slice(0, 10) // 최대 10개만 표시
+      // 안전한 slice 처리
+      const slicedCompanies = validCompanies.length > 10 
+        ? validCompanies.slice(0, 10) 
+        : validCompanies
+      
       console.log('📡 Sliced companies:', slicedCompanies)
       
       setSuggestions(slicedCompanies)
@@ -165,15 +196,15 @@ export default function CompanySearch({ onSearch }: CompanySearchProps) {
                 }
                 
                 return (
-                  <li key={index}>
-                    <button
-                      type="button"
-                      onClick={() => handleSuggestionClick(company)}
-                      className="w-full text-left px-4 py-3 hover:bg-white/10 transition-colors text-white border-b border-white/10 last:border-b-0"
-                    >
-                      {company.corp_name}
-                    </button>
-                  </li>
+                <li key={index}>
+                  <button
+                    type="button"
+                    onClick={() => handleSuggestionClick(company)}
+                    className="w-full text-left px-4 py-3 hover:bg-white/10 transition-colors text-white border-b border-white/10 last:border-b-0"
+                  >
+                    {company.corp_name}
+                  </button>
+                </li>
                 )
               })}
             </ul>
