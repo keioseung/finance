@@ -42,64 +42,25 @@ export default function CompanySearch({ onSearch }: CompanySearchProps) {
     try {
       const companies = await financialApi.searchCompanies(searchQuery)
       console.log('📡 Companies from API:', companies)
-      console.log('📡 Companies type:', typeof companies)
       console.log('📡 Is companies array?', Array.isArray(companies))
       
-      // 완전히 안전한 배열 처리
-      let companiesArray: CompanyInfo[] = []
-      
-      if (Array.isArray(companies)) {
-        companiesArray = companies
-      } else if (companies && typeof companies === 'object') {
-        // 객체인 경우 배열로 변환 시도
-        if (Array.isArray(companies.companies)) {
-          companiesArray = companies.companies
-        } else if (Array.isArray(companies.data)) {
-          companiesArray = companies.data
-        }
-      }
-      
-      console.log('📡 Processed companies array:', companiesArray)
-      console.log('📡 Array length:', companiesArray.length)
-      
-      // 추가 안전성 검사
-      if (!companiesArray || companiesArray.length === 0) {
-        console.log('📡 No companies found, setting empty array')
+      // 간단하고 안전한 처리
+      if (!Array.isArray(companies) || companies.length === 0) {
+        console.log('📡 No valid companies array, setting empty suggestions')
         setSuggestions([])
         setShowSuggestions(false)
         return
       }
       
-      // 각 항목이 올바른 형식인지 확인하고 안전하게 변환
-      const validCompanies: CompanyInfo[] = []
-      for (const company of companiesArray) {
-        if (company && typeof company === 'object') {
-          if ('corp_name' in company && typeof company.corp_name === 'string') {
-            validCompanies.push({
-              corp_code: company.corp_code || '',
-              corp_name: company.corp_name
-            })
-          } else if (typeof company === 'string') {
-            // 문자열인 경우 직접 변환
-            validCompanies.push({
-              corp_code: '',
-              corp_name: company
-            })
-          }
-        }
-      }
-      
-      console.log('📡 Valid companies:', validCompanies)
-      
-      // 안전한 slice 처리
-      const slicedCompanies = validCompanies.length > 10 
-        ? validCompanies.slice(0, 10) 
-        : validCompanies
+      // 최대 10개만 표시
+      const slicedCompanies = companies.length > 10 
+        ? companies.slice(0, 10) 
+        : companies
       
       console.log('📡 Sliced companies:', slicedCompanies)
       
       setSuggestions(slicedCompanies)
-      setShowSuggestions(validCompanies.length > 0)
+      setShowSuggestions(true)
       console.log('✅ Suggestions set successfully')
     } catch (error) {
       console.error('❌ Failed to fetch suggestions:', error)

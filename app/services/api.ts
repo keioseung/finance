@@ -61,44 +61,45 @@ export const financialApi = {
       console.log('📡 Response data:', response.data)
       console.log('📡 Response data type:', typeof response.data)
       
-      // 응답 데이터를 안전하게 처리
+      // 완전히 안전한 처리 - 백엔드 응답이 ['삼성전자'] 형태임
       let companies: string[] = []
       
-      if (response.data && typeof response.data === 'object') {
-        if (Array.isArray(response.data.companies)) {
-          companies = response.data.companies
-        } else if (Array.isArray(response.data)) {
-          companies = response.data
-        } else if (typeof response.data === 'string') {
-          // 문자열로 온 경우 (예상치 못한 응답)
-          companies = [response.data]
-        }
+      // response.data.companies가 배열인 경우
+      if (response.data && response.data.companies && Array.isArray(response.data.companies)) {
+        companies = response.data.companies
+        console.log('📡 Found companies in response.data.companies:', companies)
+      }
+      // response.data가 직접 배열인 경우 (예상치 못한 응답)
+      else if (response.data && Array.isArray(response.data)) {
+        companies = response.data
+        console.log('📡 Found companies in response.data:', companies)
+      }
+      // 그 외의 경우는 더미 데이터 사용
+      else {
+        console.log('📡 No valid companies found in response, using dummy data')
+        return getDummyCompanies(query)
       }
       
-      console.log('📡 Processed companies array:', companies)
-      console.log('📡 Companies array type:', typeof companies)
+      console.log('📡 Final companies array:', companies)
       console.log('📡 Is companies array?', Array.isArray(companies))
       
       // 안전한 변환
       const result: CompanyInfo[] = []
-      if (Array.isArray(companies)) {
-        for (const company of companies) {
-          if (typeof company === 'string' && company.trim()) {
-            result.push({
-              corp_code: '',
-              corp_name: company.trim()
-            })
-          }
+      for (const company of companies) {
+        if (typeof company === 'string' && company.trim()) {
+          result.push({
+            corp_code: '',
+            corp_name: company.trim()
+          })
         }
       }
       
       console.log('📡 Final result:', result)
-      console.log('📡 Result type:', typeof result)
-      console.log('📡 Is result array?', Array.isArray(result))
+      console.log('📡 Result length:', result.length)
       
       // 결과가 비어있으면 더미 데이터 사용
       if (result.length === 0) {
-        console.log('📡 No valid companies found, using dummy data')
+        console.log('📡 No valid companies after processing, using dummy data')
         return getDummyCompanies(query)
       }
       
