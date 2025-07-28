@@ -46,16 +46,35 @@ export const financialApi = {
 
   async searchCompanies(query: string): Promise<CompanyInfo[]> {
     try {
+      console.log('🔍 Searching companies with query:', query)
+      
       const response = await apiClient.get<{companies: string[]}>('/companies/search', {
         params: { query }
       })
+      
+      console.log('📡 Raw API response:', response)
+      console.log('📡 Response data:', response.data)
+      console.log('📡 Response data type:', typeof response.data)
+      console.log('📡 Companies array:', response.data.companies)
+      console.log('📡 Companies array type:', typeof response.data.companies)
+      console.log('📡 Is companies array?', Array.isArray(response.data.companies))
+      
       // 백엔드 응답 형식에 맞게 변환
-      return response.data.companies.map(company => ({ 
+      const companies = response.data.companies || []
+      console.log('📡 Processed companies:', companies)
+      
+      const result = companies.map(company => ({ 
         corp_code: '', // DART API에서 corp_code를 제공하지 않으므로 빈 문자열
         corp_name: company 
       }))
+      
+      console.log('📡 Final result:', result)
+      console.log('📡 Result type:', typeof result)
+      console.log('📡 Is result array?', Array.isArray(result))
+      
+      return result
     } catch (error) {
-      console.error('Failed to search companies:', error)
+      console.error('❌ Failed to search companies:', error)
       throw error
     }
   },

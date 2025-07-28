@@ -21,12 +21,27 @@ export default function FinancialMetrics({ data }: FinancialMetricsProps) {
   }
 
   const getTopMetrics = (category: string, count: number = 3) => {
+    console.log('📊 Getting top metrics for category:', category)
+    console.log('📊 Input data:', data)
+    console.log('📊 Data type:', typeof data)
+    console.log('📊 Is data array?', Array.isArray(data))
+    
     const categoryData = getCategoryData(category)
+    console.log('📊 Category data:', categoryData)
+    console.log('📊 Category data type:', typeof categoryData)
+    console.log('📊 Is category data array?', Array.isArray(categoryData))
+    
     // categoryData가 배열인지 확인하고 안전하게 처리
     const dataArray = Array.isArray(categoryData) ? categoryData : []
-    return dataArray
+    console.log('📊 Processed data array:', dataArray)
+    console.log('📊 Array length:', dataArray.length)
+    
+    const result = dataArray
       .sort((a, b) => b.idx_val - a.idx_val)
       .slice(0, count)
+    
+    console.log('📊 Final result:', result)
+    return result
   }
 
   const getInterpretation = (category: string, value: number) => {

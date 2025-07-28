@@ -37,14 +37,27 @@ export default function CompanySearch({ onSearch }: CompanySearchProps) {
     }
 
     setLoading(true)
+    console.log('🔍 Fetching suggestions for:', searchQuery)
+    
     try {
       const companies = await financialApi.searchCompanies(searchQuery)
+      console.log('📡 Companies from API:', companies)
+      console.log('📡 Companies type:', typeof companies)
+      console.log('📡 Is companies array?', Array.isArray(companies))
+      
       // companies가 배열인지 확인하고 안전하게 처리
       const companiesArray = Array.isArray(companies) ? companies : []
-      setSuggestions(companiesArray.slice(0, 10)) // 최대 10개만 표시
+      console.log('📡 Processed companies array:', companiesArray)
+      console.log('📡 Array length:', companiesArray.length)
+      
+      const slicedCompanies = companiesArray.slice(0, 10) // 최대 10개만 표시
+      console.log('📡 Sliced companies:', slicedCompanies)
+      
+      setSuggestions(slicedCompanies)
       setShowSuggestions(companiesArray.length > 0)
+      console.log('✅ Suggestions set successfully')
     } catch (error) {
-      console.error('Failed to fetch suggestions:', error)
+      console.error('❌ Failed to fetch suggestions:', error)
       setSuggestions([])
       setShowSuggestions(false)
     } finally {
